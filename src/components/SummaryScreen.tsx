@@ -1,4 +1,5 @@
 import { ShareButton } from "@/components/ShareButton";
+import { gameShareUrl } from "@/lib/url";
 import type { GameAnswer, PlayerType } from "@/types/game";
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 
 export function SummaryScreen({ answers, pressCount, dontPressCount, timeoutCount, playerType, onRestart }: Props) {
   const resultText = `『絶対に押すな』で${answers.length}つの決断。\n押した ${pressCount}回 / 押さなかった ${dontPressCount}回${timeoutCount ? ` / 時間切れ ${timeoutCount}回` : ""}\nタイプは「${playerType.title}」でした。`;
-  const url = typeof window === "undefined" ? "/" : window.location.origin;
+  const url = gameShareUrl();
   return (
     <div className="screen screen--summary">
       <header className="section-rule"><span />SUMMARY<span /></header>

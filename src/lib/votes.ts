@@ -1,4 +1,5 @@
 import { getOrCreateSessionId, getRecordedChoice, recordChoice } from "@/lib/session";
+import { getSupabaseClient } from "@/lib/supabase";
 import type { VoteChoice, VoteStats } from "@/types/game";
 
 const LOCAL_STATS_PREFIX = "do-not-press:stats:";
@@ -6,6 +7,12 @@ const LOCAL_TOTAL_KEY = "do-not-press:total";
 export const INITIAL_TOTAL_VOTES = 12_482;
 
 type StoredStats = Omit<VoteStats, "source">;
+type VoteStatsRow = {
+  press_count: number | string;
+  dont_press_count: number | string;
+  timeout_count: number | string;
+  total_count: number | string;
+};
 
 export function hasSupabaseConfig() {
   return Boolean(
@@ -50,28 +57,47 @@ function writeLocalVote(questionId: string, choice: VoteChoice): VoteStats {
   return { ...stats, source: "local" };
 }
 
+function asSupabaseStats(data: VoteStatsRow | VoteStatsRow[] | null): VoteStats {
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    pressCount: Number(row?.press_count ?? 0),
+    dontPressCount: Number(row?.dont_press_count ?? 0),
+    timeoutCount: Number(row?.timeout_count ?? 0),
+    totalCount: Number(row?.total_count ?? 0),
+    source: "supabase",
+  };
+}
+
+async function fetchSupabaseStats(questionId: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabaseが未設定です。");
+  const { data, error } = await supabase.rpc("get_vote_stats", { p_question_id: questionId });
+  if (error) throw error;
+  return asSupabaseStats(data as VoteStatsRow | VoteStatsRow[] | null);
+}
+
 export async function submitVote(questionId: string, choice: VoteChoice): Promise<VoteStats> {
   if (!hasSupabaseConfig()) return writeLocalVote(questionId, choice);
 
-  const response = await fetch("/api/votes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ questionId, choice, sessionId: getOrCreateSessionId() }),
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabaseが未設定です。");
+  const { error } = await supabase.from("votes").insert({
+    question_id: questionId,
+    choice,
+    session_id: getOrCreateSessionId(),
   });
-  if (!response.ok) {
-    const message = await response.json().catch(() => null) as { error?: string } | null;
-    throw new Error(message?.error ?? "回答を送信できませんでした。");
-  }
+  if (error && error.code !== "23505") throw new Error("回答を送信できませんでした。");
   recordChoice(questionId, choice);
-  return response.json() as Promise<VoteStats>;
+  return fetchSupabaseStats(questionId);
 }
 
 export async function getTotalVotes() {
   if (!hasSupabaseConfig()) {
     return Number(window.localStorage.getItem(LOCAL_TOTAL_KEY) ?? INITIAL_TOTAL_VOTES);
   }
-  const response = await fetch("/api/stats", { cache: "no-store" });
-  if (!response.ok) throw new Error("総回答数を取得できませんでした。");
-  const data = await response.json() as { totalCount: number };
-  return data.totalCount;
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabaseが未設定です。");
+  const { data, error } = await supabase.rpc("get_total_vote_count");
+  if (error) throw new Error("総回答数を取得できませんでした。");
+  return Number(data ?? 0);
 }

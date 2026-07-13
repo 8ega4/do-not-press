@@ -1,6 +1,7 @@
 import { ShareButton } from "@/components/ShareButton";
 import { VoteResult } from "@/components/VoteResult";
 import { reactionFor } from "@/lib/game";
+import { questionShareUrl } from "@/lib/url";
 import type { Question, VoteChoice, VoteStats } from "@/types/game";
 
 const ANSWER_LABEL: Record<VoteChoice, string> = { press: "押した", dont_press: "押さなかった", timeout: "時間切れ" };
@@ -15,7 +16,7 @@ type Props = {
 
 export function AnswerScreen({ question, choice, stats, isLast, onNext }: Props) {
   const shareText = `${question.benefit}けど、${question.consequence}。\n\nあなたは押す？\n\n『絶対に押すな』`;
-  const shareUrl = typeof window === "undefined" ? `/q/${question.id}` : `${window.location.origin}/q/${question.id}`;
+  const shareUrl = questionShareUrl(question.id);
   return (
     <div className="screen screen--answer">
       <header className="section-rule"><span />ANSWER RESULT<span /></header>
