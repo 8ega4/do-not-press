@@ -1,5 +1,5 @@
 import { ShareButton } from "@/components/ShareButton";
-import { gameShareUrl } from "@/lib/url";
+import { resultShareUrl } from "@/lib/url";
 import { buildSummaryShareText } from "@/lib/share";
 import type { GameAnswer, PlayerType } from "@/types/game";
 
@@ -14,7 +14,7 @@ type Props = {
 
 export function SummaryScreen({ answers, pressCount, dontPressCount, timeoutCount, playerType, onRestart }: Props) {
   const resultText = buildSummaryShareText(answers.length, pressCount, playerType.title);
-  const url = gameShareUrl();
+  const url = resultShareUrl();
   return (
     <div className="screen screen--summary">
       <header className="section-rule"><span />SUMMARY<span /></header>

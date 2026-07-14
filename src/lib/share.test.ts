@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildQuestionShareText, buildSummaryShareText, buildXShareUrl, openXShare } from "@/lib/share";
+import { buildQuestionShareText, buildSummaryShareText, buildTopShareText, buildXIntentUrl, openXShare } from "@/lib/share";
 
 describe("X sharing", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -7,7 +7,7 @@ describe("X sharing", () => {
   it("encodes Japanese text, line breaks, hashtag, and URL", () => {
     const text = "「1億円もらえる」\nただし\n「一生Wi-Fiが1本になる」\n#絶対に押すな";
     const url = "https://example.com/q/q001/";
-    const intent = new URL(buildXShareUrl({ text, url }));
+    const intent = new URL(buildXIntentUrl({ text, url }));
 
     expect(intent.origin + intent.pathname).toBe("https://twitter.com/intent/tweet");
     expect(intent.searchParams.get("text")).toBe(text);
@@ -27,7 +27,7 @@ describe("X sharing", () => {
       "noopener,noreferrer",
     );
   });
-});
+
   it("builds the requested question and summary post formats", () => {
     expect(buildQuestionShareText("1億円もらえる", "一生Wi-Fiが1本になる")).toBe(
       "「1億円もらえる」\nただし\n「一生Wi-Fiが1本になる」\nあなたは押す？押さない？\n#絶対に押すな",
@@ -35,4 +35,8 @@ describe("X sharing", () => {
     expect(buildSummaryShareText(3, 2, "攻めの決断者")).toBe(
       "『絶対に押すな』に挑戦！\n3問中2回、ボタンを押しました。\nタイプは「攻めの決断者」\nあなたなら押す？\n#絶対に押すな",
     );
+    expect(buildTopShareText()).toBe(
+      "『絶対に押すな』\nその代償、本当に払えますか？\nあなたなら押す？\n#絶対に押すな",
+    );
   });
+});

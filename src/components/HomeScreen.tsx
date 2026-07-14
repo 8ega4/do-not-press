@@ -1,6 +1,12 @@
 import { EmergencyButton } from "@/components/EmergencyButton";
+import { ShareButton } from "@/components/ShareButton";
+import { buildTopShareText } from "@/lib/share";
+import { topShareUrl } from "@/lib/url";
 
 export function HomeScreen({ totalVotes, onStart }: { totalVotes: number; onStart: () => void }) {
+  const shareText = buildTopShareText();
+  const shareUrl = topShareUrl();
+
   return (
     <div className="screen screen--home">
       <header className="experiment-label" aria-hidden="true">EXPERIMENT<br />NO.0001</header>
@@ -12,6 +18,9 @@ export function HomeScreen({ totalVotes, onStart }: { totalVotes: number; onStar
       <button type="button" className="action-button action-button--primary action-button--start" onClick={onStart}>ゲームを始める</button>
       <div className="total-counter" aria-label={`これまで${totalVotes.toLocaleString("ja-JP")}回の決断`}>
         <span>これまで</span><strong>{totalVotes.toLocaleString("ja-JP")}</strong><span>回の決断</span>
+      </div>
+      <div className="home-share">
+        <ShareButton text={shareText} url={shareUrl} />
       </div>
       <p className="fiction-note"><span aria-hidden="true">△</span> これは架空の二択ゲームです</p>
     </div>

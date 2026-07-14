@@ -1,13 +1,33 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { gameShareUrl, questionShareUrl } from "@/lib/url";
 
 describe("share URLs", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
 
-  it("adds the OGP cache version to question and top-page URLs", () => {
+  it("adds UTM parameters and the GitHub Pages base path to question sharing", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BASE_PATH", "/do-not-press");
+    vi.stubGlobal("window", { location: { origin: "https://8ega4.github.io" } });
+    const { questionShareUrl } = await import("@/lib/url");
+
+    const url = new URL(questionShareUrl("q030"));
+    expect(url.pathname).toBe("/do-not-press/q/q030/");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      utm_source: "x",
+      utm_medium: "social",
+      utm_campaign: "question_share",
+      utm_content: "q030",
+    });
+    expect(url.searchParams.has("og")).toBe(false);
+  });
+
+  it("uses distinct campaigns for result and top-page sharing", async () => {
     vi.stubGlobal("window", { location: { origin: "https://example.com" } });
+    const { resultShareUrl, topShareUrl } = await import("@/lib/url");
 
-    expect(questionShareUrl("q001")).toBe("https://example.com/q/q001/?og=2");
-    expect(gameShareUrl()).toBe("https://example.com/?og=2");
+    expect(new URL(resultShareUrl()).searchParams.get("utm_campaign")).toBe("result_share");
+    expect(new URL(topShareUrl()).searchParams.get("utm_campaign")).toBe("top_share");
   });
 });

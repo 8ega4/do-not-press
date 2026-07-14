@@ -20,6 +20,7 @@ export function ShareButton({ text, url }: XShareData) {
       onClick={() => openXShare({ text, url })}
     >
       <XIcon />
+      <span>で共有</span>
     </button>
   );
 }
