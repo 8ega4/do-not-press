@@ -76,11 +76,15 @@ button:disabled { cursor: wait; opacity: 0.58; }
 .action-button:active { transform: translateY(2px); }
 .action-button svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .action-button .x-share-icon { fill: currentColor; stroke: none; }
+.action-button--x-share { min-height: 62px; border-color: #383b3f; background: rgba(255,255,255,.72); color: #111214; box-shadow: 0 3px 0 #777b7f, 0 7px 14px rgba(20,22,24,.1); }
+.action-button--x-share:hover { background: #fff; }
+.action-button--x-share .x-share-icon { width: 25px; height: 25px; }
 .action-button--primary { border-color: #ad1017; background: linear-gradient(180deg, #df1b24, #bd1018); color: white; box-shadow: 0 5px 0 #850b11, 0 8px 16px rgba(101,4,8,.18); }
 .action-button--secondary:hover { background: white; }
 .action-button--start { min-height: 72px; font-size: 21px; box-shadow: 0 5px 0 #850b11, 0 9px 18px rgba(101,4,8,.2); }
-.total-counter { width: 100%; min-height: 65px; display: flex; align-items: baseline; justify-content: center; gap: 9px; margin-top: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.28); font-size: 13px; }
-.total-counter strong { color: var(--red); font: 700 31px/1 var(--font-mono); letter-spacing: .02em; }
+.total-counter { width: 100%; min-height: 65px; display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.28); font-size: 13px; line-height: 1; }
+.total-counter span { line-height: 1; }
+.total-counter strong { display: inline-flex; align-items: center; color: var(--red); font: 700 31px/1 var(--font-mono); letter-spacing: .02em; }
 .fiction-note { margin: auto 0 0; color: var(--muted); font-size: 12px; letter-spacing: .05em; }
 .fiction-note span { margin-right: 7px; }
 

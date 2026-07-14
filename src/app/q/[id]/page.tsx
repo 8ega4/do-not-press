@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description: "あなたは押す？『絶対に押すな』",
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: "絶対に押すな" }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${title}｜絶対に押すな` }],
     },
     twitter: {
       card: "summary_large_image",

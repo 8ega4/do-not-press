@@ -10,10 +10,16 @@ function XIcon() {
   );
 }
 
-export function ShareButton({ text, url, variant = "secondary" }: XShareData & { variant?: "primary" | "secondary" }) {
+export function ShareButton({ text, url }: XShareData) {
   return (
-    <button type="button" className={`action-button action-button--${variant}`} onClick={() => openXShare({ text, url })}>
-      <XIcon /><span>Xで共有</span>
+    <button
+      type="button"
+      className="action-button action-button--x-share"
+      aria-label="Xで共有"
+      title="Xで共有"
+      onClick={() => openXShare({ text, url })}
+    >
+      <XIcon />
     </button>
   );
 }
