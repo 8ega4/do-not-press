@@ -86,7 +86,7 @@ button:disabled { cursor: wait; opacity: 0.58; }
 .total-counter span { line-height: 1; }
 .total-counter strong { display: inline-flex; align-items: center; color: var(--red); font: 700 31px/1 var(--font-mono); letter-spacing: .02em; }
 .home-share { width: 100%; margin-top: 14px; }
-.fiction-note { margin: auto 0 0; color: var(--muted); font-size: 12px; letter-spacing: .05em; }
+.fiction-note { margin: auto 0 0; padding-top: 24px; color: var(--muted); font-size: 12px; letter-spacing: .05em; }
 .fiction-note span { margin-right: 7px; }
 
 .progress-header { text-align: center; font-family: var(--font-mono); }
@@ -149,12 +149,13 @@ button:disabled { cursor: wait; opacity: 0.58; }
 
 @media (max-height: 730px) {
   .screen { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
-  .screen--home { padding-top: calc(32px + env(safe-area-inset-top)); }
-  .home-copy { margin: 24px 0 8px; }
+  .screen--home { padding-top: calc(24px + env(safe-area-inset-top)); }
+  .home-copy { margin: 16px 0 8px; }
   .home-copy h1 { font-size: 52px; }
   .home-copy p { margin-top: 15px; }
   .emergency-button--hero { width: 176px; height: 154px; margin-bottom: 10px; }
   .emergency-button__base { transform: scale(.9); }
+  .total-counter { margin-top: 14px; }
   .question-card { min-height: 190px; }
   .emergency-button--play { height: 124px; }
   .answer-heading { margin: 28px 0 18px; }
