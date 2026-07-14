@@ -8,7 +8,7 @@ import { QuestionScreen } from "@/components/QuestionScreen";
 import { SummaryScreen } from "@/components/SummaryScreen";
 import { questions } from "@/data/questions";
 import { buildQuestionSequence, summarizeAnswers } from "@/lib/game";
-import { getTotalVotes, INITIAL_TOTAL_VOTES, submitVote } from "@/lib/votes";
+import { getTotalVotes, submitVote } from "@/lib/votes";
 import type { GameAnswer, Question, VoteChoice, VoteStats } from "@/types/game";
 
 type View = "home" | "question" | "answer" | "summary";
@@ -24,7 +24,7 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
   const [error, setError] = useState<string | null>(null);
   const [failedChoice, setFailedChoice] = useState<VoteChoice | null>(null);
   const [impact, setImpact] = useState(false);
-  const [totalVotes, setTotalVotes] = useState(INITIAL_TOTAL_VOTES);
+  const [totalVotes, setTotalVotes] = useState(0);
   const submissionLock = useRef(false);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { ShareButton } from "@/components/ShareButton";
 import { VoteResult } from "@/components/VoteResult";
 import { reactionFor } from "@/lib/game";
+import { buildQuestionShareText } from "@/lib/share";
 import { questionShareUrl } from "@/lib/url";
 import type { Question, VoteChoice, VoteStats } from "@/types/game";
 
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export function AnswerScreen({ question, choice, stats, isLast, onNext }: Props) {
-  const shareText = `${question.benefit}けど、${question.consequence}。\n\nあなたは押す？\n\n『絶対に押すな』`;
+  const shareText = buildQuestionShareText(question.benefit, question.consequence);
   const shareUrl = questionShareUrl(question.id);
   return (
     <div className="screen screen--answer">
@@ -25,7 +26,7 @@ export function AnswerScreen({ question, choice, stats, isLast, onNext }: Props)
       <p className="reaction"><span aria-hidden="true">△</span>{reactionFor(choice, stats.totalCount)}</p>
       <div className="screen-actions">
         <button type="button" className="action-button action-button--primary" onClick={onNext}>{isLast ? "結果を見る" : "次の問題"}<span aria-hidden="true">→</span></button>
-        <ShareButton title="絶対に押すな" text={shareText} url={shareUrl} label="この問題を共有" />
+        <ShareButton text={shareText} url={shareUrl} />
       </div>
     </div>
   );

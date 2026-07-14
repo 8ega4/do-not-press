@@ -1,4 +1,5 @@
 import type { GameAnswer, PlayerType, Question, VoteChoice } from "@/types/game";
+import { QUESTION_TIME_LIMIT_SECONDS } from "@/lib/timer";
 
 export const GAME_LENGTH = 3;
 
@@ -40,7 +41,7 @@ export function reactionFor(choice: VoteChoice, seed: number) {
   const messages = {
     press: ["欲望に正直ですね", "その覚悟、嫌いじゃない", "代償より利益を選びました", "あなたは押した側です"],
     dont_press: ["慎重派ですね", "誘惑に勝ちました", "その代償は重すぎたようです", "あなたは押さない側です"],
-    timeout: ["決めきれないのも、ひとつの答えです", "5秒では選べませんでした", "迷っている間に時間切れです", "今回は見送りになりました"],
+    timeout: ["決めきれないのも、ひとつの答えです", `${QUESTION_TIME_LIMIT_SECONDS}秒では選べませんでした`, "迷っている間に時間切れです", "今回は見送りになりました"],
   } satisfies Record<VoteChoice, string[]>;
   const choices = messages[choice];
   return choices[Math.abs(seed) % choices.length];

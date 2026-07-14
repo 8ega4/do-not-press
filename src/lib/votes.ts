@@ -1,12 +1,15 @@
-import { getOrCreateSessionId, getRecordedChoice, recordChoice } from "@/lib/session";
+import { getOrCreateSessionId, recordChoice } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { VoteChoice, VoteStats } from "@/types/game";
 
-const LOCAL_STATS_PREFIX = "do-not-press:stats:";
-const LOCAL_TOTAL_KEY = "do-not-press:total";
-export const INITIAL_TOTAL_VOTES = 12_482;
+export const LOCAL_VOTE_STATS_KEY = "do-not-press-local-vote-stats";
 
-type StoredStats = Omit<VoteStats, "source">;
+export type LocalVoteStats = Record<string, {
+  press: number;
+  dontPress: number;
+  timeout: number;
+}>;
+
 type VoteStatsRow = {
   press_count: number | string;
   dont_press_count: number | string;
@@ -20,41 +23,57 @@ export function hasSupabaseConfig() {
   );
 }
 
-function hashQuestionId(questionId: string) {
-  return [...questionId].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+function isVoteCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-export function createMockStats(questionId: string): StoredStats {
-  const hash = hashQuestionId(questionId);
-  const totalCount = 620 + (hash * 47) % 1_900;
-  const pressCount = Math.round(totalCount * (0.34 + (hash % 41) / 100));
-  const dontPressCount = totalCount - pressCount;
-  return { pressCount, dontPressCount, timeoutCount: 0, totalCount };
-}
-
-function readLocalStats(questionId: string): StoredStats {
-  const stored = window.localStorage.getItem(`${LOCAL_STATS_PREFIX}${questionId}`);
-  if (!stored) return createMockStats(questionId);
+function readLocalVoteStats(): LocalVoteStats {
   try {
-    return JSON.parse(stored) as StoredStats;
+    const stored = window.localStorage.getItem(LOCAL_VOTE_STATS_KEY);
+    if (!stored) return {};
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, LocalVoteStats[string]] => {
+        const counts = entry[1] as Partial<LocalVoteStats[string]> | null;
+        return Boolean(
+          counts &&
+          isVoteCount(counts.press) &&
+          isVoteCount(counts.dontPress) &&
+          isVoteCount(counts.timeout),
+        );
+      }),
+    );
   } catch {
-    return createMockStats(questionId);
+    return {};
+  }
+}
+
+function saveLocalVoteStats(stats: LocalVoteStats) {
+  try {
+    window.localStorage.setItem(LOCAL_VOTE_STATS_KEY, JSON.stringify(stats));
+  } catch {
+    // Storage can be disabled or full. The current result can still be shown.
   }
 }
 
 function writeLocalVote(questionId: string, choice: VoteChoice): VoteStats {
-  const stats = readLocalStats(questionId);
-  if (!getRecordedChoice(questionId)) {
-    if (choice === "press") stats.pressCount += 1;
-    if (choice === "dont_press") stats.dontPressCount += 1;
-    if (choice === "timeout") stats.timeoutCount += 1;
-    stats.totalCount += 1;
-    recordChoice(questionId, choice);
-    const total = Number(window.localStorage.getItem(LOCAL_TOTAL_KEY) ?? INITIAL_TOTAL_VOTES);
-    window.localStorage.setItem(LOCAL_TOTAL_KEY, String(total + 1));
-    window.localStorage.setItem(`${LOCAL_STATS_PREFIX}${questionId}`, JSON.stringify(stats));
-  }
-  return { ...stats, source: "local" };
+  const allStats = readLocalVoteStats();
+  const current = allStats[questionId] ?? { press: 0, dontPress: 0, timeout: 0 };
+  const next = {
+    press: current.press + (choice === "press" ? 1 : 0),
+    dontPress: current.dontPress + (choice === "dont_press" ? 1 : 0),
+    timeout: current.timeout + (choice === "timeout" ? 1 : 0),
+  };
+  allStats[questionId] = next;
+  saveLocalVoteStats(allStats);
+
+  return {
+    pressCount: next.press,
+    dontPressCount: next.dontPress,
+    timeoutCount: next.timeout,
+    totalCount: next.press + next.dontPress + next.timeout,
+    source: "local",
+  };
 }
 
 function asSupabaseStats(data: VoteStatsRow | VoteStatsRow[] | null): VoteStats {
@@ -93,7 +112,10 @@ export async function submitVote(questionId: string, choice: VoteChoice): Promis
 
 export async function getTotalVotes() {
   if (!hasSupabaseConfig()) {
-    return Number(window.localStorage.getItem(LOCAL_TOTAL_KEY) ?? INITIAL_TOTAL_VOTES);
+    return Object.values(readLocalVoteStats()).reduce(
+      (total, counts) => total + counts.press + counts.dontPress + counts.timeout,
+      0,
+    );
   }
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error("Supabaseが未設定です。");

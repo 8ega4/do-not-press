@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: "絶対に押すな", template: "%s｜絶対に押すな" },
-  description: "メリットと変な代償を読み、赤いボタンを押すか決める5秒間の二択ゲーム。",
+  description: "メリットと変な代償を読み、赤いボタンを押すか決める10秒間の二択ゲーム。",
   applicationName: "絶対に押すな",
   openGraph: {
     title: "絶対に押すな",

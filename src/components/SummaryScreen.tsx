@@ -1,5 +1,6 @@
 import { ShareButton } from "@/components/ShareButton";
 import { gameShareUrl } from "@/lib/url";
+import { buildSummaryShareText } from "@/lib/share";
 import type { GameAnswer, PlayerType } from "@/types/game";
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 };
 
 export function SummaryScreen({ answers, pressCount, dontPressCount, timeoutCount, playerType, onRestart }: Props) {
-  const resultText = `『絶対に押すな』で${answers.length}つの決断。\n押した ${pressCount}回 / 押さなかった ${dontPressCount}回${timeoutCount ? ` / 時間切れ ${timeoutCount}回` : ""}\nタイプは「${playerType.title}」でした。`;
+  const resultText = buildSummaryShareText(answers.length, pressCount, playerType.title);
   const url = gameShareUrl();
   return (
     <div className="screen screen--summary">
@@ -26,8 +27,7 @@ export function SummaryScreen({ answers, pressCount, dontPressCount, timeoutCoun
       <section className="player-type"><h2>{playerType.title}</h2><p>{playerType.description}</p></section>
       <div className="screen-actions">
         <button type="button" className="action-button action-button--primary" onClick={onRestart}>もう一度遊ぶ<span aria-hidden="true">↻</span></button>
-        <ShareButton title="絶対に押すな｜診断結果" text={resultText} url={url} label="結果を共有" />
-        <ShareButton title="絶対に押すな" text="この3問、あなたなら押す？『絶対に押すな』に挑戦してみて。" url={url} label="友達に挑戦させる" />
+        <ShareButton text={resultText} url={url} />
       </div>
     </div>
   );

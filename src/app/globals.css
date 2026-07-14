@@ -75,6 +75,7 @@ button:disabled { cursor: wait; opacity: 0.58; }
 .action-button { width: 100%; min-height: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; border: 1px solid var(--line-dark); border-radius: 3px; background: rgba(255,255,255,.45); color: var(--ink); font-weight: 760; font-size: 16px; letter-spacing: .04em; cursor: pointer; transition: transform 120ms ease, background 120ms ease; }
 .action-button:active { transform: translateY(2px); }
 .action-button svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.action-button .x-share-icon { fill: currentColor; stroke: none; }
 .action-button--primary { border-color: #ad1017; background: linear-gradient(180deg, #df1b24, #bd1018); color: white; box-shadow: 0 5px 0 #850b11, 0 8px 16px rgba(101,4,8,.18); }
 .action-button--secondary:hover { background: white; }
 .action-button--start { min-height: 72px; font-size: 21px; box-shadow: 0 5px 0 #850b11, 0 9px 18px rgba(101,4,8,.2); }
@@ -122,6 +123,7 @@ button:disabled { cursor: wait; opacity: 0.58; }
 .vote-bar__press { background: linear-gradient(90deg, #bd1018, #e5222b); transition: width 500ms ease; }
 .vote-bar__dont { background: #c5c8ca; transition: width 500ms ease; }
 .vote-result__total { margin: 12px 0 0; text-align: center; font: 700 20px/1 var(--font-mono); }
+.vote-result__empty { margin: 11px 0 0; text-align: center; color: var(--muted); font-size: 11px; }
 .vote-result__source { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 10px; }
 .reaction { min-height: 72px; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 26px 0 18px; border: 1px solid rgba(201,21,30,.55); font-weight: 760; text-align: center; }
 .reaction span { color: var(--red); }

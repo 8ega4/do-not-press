@@ -1,26 +1,21 @@
-export async function shareContent(data: ShareData) {
-  if (navigator.share) {
-    try {
-      await navigator.share(data);
-      return "shared" as const;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return "cancelled" as const;
-    }
-  }
-  const content = [data.text, data.url].filter(Boolean).join("\n\n");
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(content);
-  } else {
-    const textarea = document.createElement("textarea");
-    textarea.value = content;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-    const copied = document.execCommand("copy");
-    textarea.remove();
-    if (!copied) throw new Error("コピーできませんでした。");
-  }
-  return "copied" as const;
+export type XShareData = {
+  text: string;
+  url: string;
+};
+
+export function buildQuestionShareText(benefit: string, consequence: string) {
+  return `「${benefit}」\nただし\n「${consequence}」\nあなたは押す？押さない？\n#絶対に押すな`;
+}
+
+export function buildSummaryShareText(questionCount: number, pressCount: number, playerType: string) {
+  return `『絶対に押すな』に挑戦！\n${questionCount}問中${pressCount}回、ボタンを押しました。\nタイプは「${playerType}」\nあなたなら押す？\n#絶対に押すな`;
+}
+
+export function buildXShareUrl({ text, url }: XShareData) {
+  const params = new URLSearchParams({ text, url });
+  return `https://twitter.com/intent/tweet?${params.toString()}`;
+}
+
+export function openXShare(data: XShareData) {
+  window.open(buildXShareUrl(data), "_blank", "noopener,noreferrer");
 }

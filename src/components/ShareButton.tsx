@@ -1,34 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { shareContent } from "@/lib/share";
+import { openXShare, type XShareData } from "@/lib/share";
 
-function ShareIcon() {
+function XIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-      <circle cx="18" cy="5" r="2.25" /><circle cx="6" cy="12" r="2.25" /><circle cx="18" cy="19" r="2.25" />
-      <path d="m8 11 7.8-4.5M8 13l7.8 4.5" />
+    <svg className="x-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
     </svg>
   );
 }
 
-export function ShareButton({ title, text, url, label, variant = "secondary" }: ShareData & { label: string; variant?: "primary" | "secondary" }) {
-  const [status, setStatus] = useState<"idle" | "copied" | "shared" | "error">("idle");
-
-  async function handleShare() {
-    try {
-      const result = await shareContent({ title, text, url });
-      if (result === "copied" || result === "shared") setStatus(result);
-    } catch {
-      setStatus("error");
-    }
-    window.setTimeout(() => setStatus("idle"), 2_000);
-  }
-
-  const statusLabel = status === "copied" ? "リンクをコピーしました" : status === "shared" ? "共有しました" : status === "error" ? "共有できませんでした" : label;
+export function ShareButton({ text, url, variant = "secondary" }: XShareData & { variant?: "primary" | "secondary" }) {
   return (
-    <button type="button" className={`action-button action-button--${variant}`} onClick={handleShare}>
-      <ShareIcon /><span>{statusLabel}</span>
+    <button type="button" className={`action-button action-button--${variant}`} onClick={() => openXShare({ text, url })}>
+      <XIcon /><span>Xで共有</span>
     </button>
   );
 }
