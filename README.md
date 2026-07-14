@@ -107,7 +107,8 @@ Supabase環境変数が両方そろっていない場合は、自動的にロー
 - 問題結果と最終結果の「Xで共有」からXの投稿画面を新しいタブで開く
 - 投稿本文と共有URLは `URLSearchParams` でエンコード
 - 問題結果は現在の問題文と問題直リンク、最終結果は3問の結果とトップページURLを共有
-- `public/og-image.png` の1200×630画像を全ページのOGPに設定
+- `public/og-image-v2.png` の1200×630画像を全ページのOGPに設定
+- Xのカードキャッシュ更新時は、共有URLとOG画像のバージョンを `src/lib/og.ts` で同時に更新
 - `robots.ts`、`sitemap.ts`、日本語lang、viewport、theme-colorを設定
 
 ## GitHub Pagesへのデプロイ

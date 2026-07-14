@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { OG_IMAGE_PATH } from "@/lib/og";
 import "./globals.css";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-const ogImageUrl = `${siteUrl}/og-image.png`;
+const ogImageUrl = `${siteUrl}${OG_IMAGE_PATH}`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

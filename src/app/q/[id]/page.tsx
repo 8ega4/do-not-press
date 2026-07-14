@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { GameApp } from "@/components/GameApp";
 import { getQuestionById, questions } from "@/data/questions";
 import { buildQuestionSequence } from "@/lib/game";
+import { OG_IMAGE_PATH } from "@/lib/og";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!question) return {};
   const title = `${question.benefit}。ただし、${question.consequence}`;
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const ogImageUrl = `${siteUrl}/og-image.png`;
+  const ogImageUrl = `${siteUrl}${OG_IMAGE_PATH}`;
   return {
     title,
     description: `${title}。あなたは赤いボタンを押す？`,
