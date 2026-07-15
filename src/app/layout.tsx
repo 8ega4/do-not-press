@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { OG_IMAGE_PATH } from "@/lib/og";
 import "./globals.css";
 
@@ -66,7 +67,14 @@ export default function RootLayout({
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Script
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: "373c1112fe524e3aa18bc06c6682e777" })}
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }
