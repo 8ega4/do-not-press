@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GameApp } from "@/components/GameApp";
 import { getQuestionById, questions } from "@/data/questions";
-import { buildQuestionSequence } from "@/lib/game";
 import { OG_IMAGE_PATH } from "@/lib/og";
 
 type Props = { params: Promise<{ id: string }> };
@@ -39,5 +38,5 @@ export default async function QuestionPage({ params }: Props) {
   const { id } = await params;
   const question = getQuestionById(id);
   if (!question) notFound();
-  return <GameApp initialQuestions={buildQuestionSequence(questions, id, () => 0.42)} startImmediately />;
+  return <GameApp initialQuestion={question} startImmediately />;
 }

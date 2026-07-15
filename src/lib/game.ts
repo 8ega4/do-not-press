@@ -1,48 +1,47 @@
-import type { GameAnswer, PlayerType, Question, VoteChoice } from "@/types/game";
-import { QUESTION_TIME_LIMIT_SECONDS } from "@/lib/timer";
+import type { PlayHistory, Question } from "@/types/game";
 
-export const GAME_LENGTH = 3;
+type SelectNextQuestionOptions = {
+  questions: Question[];
+  answeredQuestionIds: string[];
+  lastQuestionId?: string;
+  lastCategory?: string;
+  random?: () => number;
+};
 
-export function buildQuestionSequence(
-  allQuestions: Question[],
-  firstQuestionId?: string,
-  random: () => number = Math.random,
-) {
-  const active = allQuestions.filter((question) => question.active);
-  const first = firstQuestionId
-    ? active.find((question) => question.id === firstQuestionId)
-    : undefined;
-  const pool = active.filter((question) => question.id !== first?.id);
-
-  for (let index = pool.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(random() * (index + 1));
-    [pool[index], pool[target]] = [pool[target], pool[index]];
+export function rolloverAnsweredQuestions(history: PlayHistory, allQuestions: Question[]) {
+  const activeIds = allQuestions.filter((question) => question.active).map((question) => question.id);
+  const answered = new Set(history.answeredQuestionIds);
+  if (activeIds.length > 0 && activeIds.every((id) => answered.has(id))) {
+    return { ...history, answeredQuestionIds: [] };
   }
-
-  return [...(first ? [first] : []), ...pool].slice(0, GAME_LENGTH);
+  return history;
 }
 
-export function getPlayerType(pressCount: number): PlayerType {
-  if (pressCount === 3) return { title: "欲望フルスロットル", description: "迷いよりも可能性を選ぶ、一直線な決断でした。" };
-  if (pressCount === 2) return { title: "攻めの決断者", description: "代償を見極めながら、勝負どころでは押すタイプ。" };
-  if (pressCount === 1) return { title: "慎重な冒険者", description: "基本は堅実。でも一度だけ誘惑に賭けました。" };
-  return { title: "鉄壁の理性", description: "どんなメリットにも、冷静さを手放しませんでした。" };
-}
+export function selectNextQuestion({
+  questions,
+  answeredQuestionIds,
+  lastQuestionId,
+  lastCategory,
+  random = Math.random,
+}: SelectNextQuestionOptions) {
+  const active = questions.filter((question) => question.active);
+  if (active.length === 0) throw new Error("表示できる問題がありません。");
 
-export function summarizeAnswers(answers: GameAnswer[]) {
-  const pressCount = answers.filter((answer) => answer.choice === "press").length;
-  const dontPressCount = answers.filter((answer) => answer.choice === "dont_press").length;
-  const timeoutCount = answers.filter((answer) => answer.choice === "timeout").length;
+  const answered = new Set(answeredQuestionIds);
+  const unanswered = active.filter((question) => !answered.has(question.id));
+  let candidates = unanswered.length > 0 ? unanswered : active;
 
-  return { pressCount, dontPressCount, timeoutCount, playerType: getPlayerType(pressCount) };
-}
+  const withoutPrevious = candidates.filter((question) => question.id !== lastQuestionId);
+  if (withoutPrevious.length > 0) candidates = withoutPrevious;
 
-export function reactionFor(choice: VoteChoice, seed: number) {
-  const messages = {
-    press: ["欲望に正直ですね", "その覚悟、嫌いじゃない", "代償より利益を選びました", "あなたは押した側です"],
-    dont_press: ["慎重派ですね", "誘惑に勝ちました", "その代償は重すぎたようです", "あなたは押さない側です"],
-    timeout: ["決めきれないのも、ひとつの答えです", `${QUESTION_TIME_LIMIT_SECONDS}秒では選べませんでした`, "迷っている間に時間切れです", "今回は見送りになりました"],
-  } satisfies Record<VoteChoice, string[]>;
-  const choices = messages[choice];
-  return choices[Math.abs(seed) % choices.length];
+  const differentCategory = candidates.filter((question) => question.category !== lastCategory);
+  if (differentCategory.length > 0) candidates = differentCategory;
+
+  const totalWeight = candidates.reduce((sum, question) => sum + Math.max(1, question.priority ?? 1), 0);
+  let position = random() * totalWeight;
+  for (const question of candidates) {
+    position -= Math.max(1, question.priority ?? 1);
+    if (position < 0) return question;
+  }
+  return candidates[candidates.length - 1];
 }

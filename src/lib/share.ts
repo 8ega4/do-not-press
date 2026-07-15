@@ -1,14 +1,41 @@
+import type { VoteChoice, VoteOutcome } from "@/types/game";
+
 export type XShareData = {
   text: string;
   url: string;
 };
 
-export function buildQuestionShareText(benefit: string, consequence: string) {
-  return `「${benefit}」\nただし\n「${consequence}」\nあなたは押す？押さない？\n#絶対に押すな`;
+const ANSWER_SHARE_LABEL: Record<VoteChoice, string> = {
+  press: "押す",
+  dont_press: "押さない",
+  timeout: "時間切れ",
+};
+
+function buildOutcomeSentence(outcome: VoteOutcome) {
+  if (outcome.status === "timeout") return "今回は時間内に決められませんでした。";
+  const percentage = `同じ回答は${outcome.sameAnswerPercent ?? 0}％。`;
+  if (outcome.status === "majority") return `${percentage}多数派でした。`;
+  if (outcome.status === "minority") return `${percentage}少数派でした。`;
+  if (outcome.status === "split") return `${percentage}意見は真っ二つでした。`;
+  if (outcome.status === "first") return `${percentage}最初の回答者でした。`;
+  return `${percentage}まだ回答は集まっていません。`;
 }
 
-export function buildSummaryShareText(questionCount: number, pressCount: number, playerType: string) {
-  return `『絶対に押すな』に挑戦！\n${questionCount}問中${pressCount}回、ボタンを押しました。\nタイプは「${playerType}」\nあなたなら押す？\n#絶対に押すな`;
+export function buildQuestionResultShareText({
+  benefit,
+  consequence,
+  choice,
+  outcome,
+}: {
+  benefit: string;
+  consequence: string;
+  choice: VoteChoice;
+  outcome: VoteOutcome;
+}) {
+  const answer = choice === "timeout"
+    ? "私は「時間切れ」でした。"
+    : `私は「${ANSWER_SHARE_LABEL[choice]}」を選びました。`;
+  return `「${benefit}」\nただし\n「${consequence}」\n\n${answer}\n${buildOutcomeSentence(outcome)}\n\nあなたなら押す？\n\n#絶対に押すな`;
 }
 
 export function buildTopShareText() {

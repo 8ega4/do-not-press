@@ -1,19 +1,31 @@
 # 絶対に押すな
 
-メリットと少し変な代償を読み、10秒以内に赤いボタンを「押す」か「押さない」か決める、スマートフォン向けブラウザゲームです。3問終了後にプレイヤータイプを表示し、問題や結果をXへ共有できます。
+メリットと代償を読み、10秒以内に赤いボタンを「押す」か「押さない」か決める、スマートフォン向けのエンドレス二択ゲームです。質問数による終了条件はなく、各問題の結果・自分の回答割合・多数派／少数派をその場でXへ共有できます。
 
-Supabaseが未設定でも、ブラウザの `localStorage` に実際の回答だけを保存して最後まで遊べます。
+## ゲームフロー
+
+```text
+トップ
+→ 問題
+→ 押す／押さない／時間切れ
+→ その問題の結果
+→ Xで共有、または次の問題
+→ 以後繰り返し
+```
+
+- 3問制・総合診断・プレイヤータイプはありません。
+- 未回答問題を優先し、直前の問題と同じカテゴリをできるだけ避けます。
+- 108問をすべて回答したときだけ一巡扱いにし、再びシャッフルします。
+- プレイ履歴は `do-not-press-play-history` に保存し、再読み込み後も継続します。
+- 履歴には回答済みID、押した回数、押さなかった回数、時間切れ回数、総回答数、直前の問題・カテゴリを保存します。
 
 ## 技術構成
 
 - Next.js 16 / React 19 / App Router
-- TypeScript
-- Tailwind CSS 4 + カスタムCSS
+- TypeScript / Tailwind CSS 4 + カスタムCSS
 - Supabase（Postgres / RLS / RPC）
-- Vitest
-- ESLint
-- npm
-- GitHub Pages / Vercelへデプロイ可能
+- Vitest / ESLint / npm
+- GitHub Pages
 
 ## セットアップ
 
@@ -25,21 +37,17 @@ cp .env.example .env.local
 npm run dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。Supabaseを使わない場合、環境変数は空のままで構いません。
-
 主なコマンド:
 
 ```bash
-npm run dev       # 開発サーバー
-npm run lint      # ESLint
-npm test          # ロジックテスト
-npm run build     # 本番ビルド
-npm start         # 本番サーバー
+npm run dev
+npm run lint
+npm test
+npm run build
+node scripts/generate_supabase_seed.mjs
 ```
 
 ## 環境変数
-
-`.env.example` を `.env.local` にコピーして設定します。
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -48,86 +56,141 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_BASE_PATH=
 ```
 
-- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトのURL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabaseの公開用anon key
-- `NEXT_PUBLIC_SITE_URL`: 共有URL・sitemap・OGPに使う公開URL。公開後は本番URLに変更します
-- `NEXT_PUBLIC_BASE_PATH`: サブディレクトリ配信時のベースパス。GitHub Pagesでは `/do-not-press`
+- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトURL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: ブラウザで使う公開用anon／publishable key
+- `NEXT_PUBLIC_SITE_URL`: 共有・sitemap・OGPの公開URL
+- `NEXT_PUBLIC_BASE_PATH`: GitHub Pagesでは `/do-not-press`
 
-秘密鍵やservice role keyは、このMVPでは使いません。
+service role keyやsecret keyをブラウザへ渡さないでください。
+
+## 問題データ
+
+問題は [`src/data/questions.ts`](./src/data/questions.ts) で管理します。
+
+```ts
+{
+  id: "q109",
+  benefit: "毎日必ず定時に帰れる",
+  consequence: "昼休みは毎日15分になる",
+  category: "仕事",
+  active: true,
+  priority: 2,
+}
+```
+
+追加・変更後は次を実行し、[`supabase/schema.sql`](./supabase/schema.sql) のseedを同期します。
+
+```bash
+node scripts/generate_supabase_seed.mjs
+```
+
+### カテゴリ
+
+現在は各9問、合計108問です。
+
+- お金・成功
+- 恋愛
+- 友人・家族
+- 仕事
+- 特殊能力
+- 未来
+- SNS
+- 食べ物
+- 日常生活
+- 道徳・心理
+- くだらない代償
+- 究極の選択
+
+### 品質基準
+
+新しい問題は、次のうち最低2つ以上を満たす内容にします。
+
+- 意見が割れそう
+- メリットを本気で欲しい
+- 代償が絶妙に嫌
+- 価値観の違いが出る
+- 少数派だと驚ける
+- コメントで議論しやすい
+- 一文で理解できる
+- 友達へ送りたくなる
+
+差別的・性的・政治的・宗教的な題材、病気・障害・災害・犯罪・死を軽く扱う題材、実在人物や企業への攻撃は追加しません。`active: false` の問題はゲームと静的な問題別ページから除外されます。`priority` は1〜5で、共有されやすい問題を少し選ばれやすくする手動値です。
+
+## 問題選択とプレイ履歴
+
+`selectNextQuestion` は次の順に候補を絞ります。
+
+1. `active: true` の未回答問題
+2. 直前とは異なる問題
+3. 直前とは異なるカテゴリ
+4. `priority` による軽い重み付き抽選
+
+全有効問題を回答した場合だけ `answeredQuestionIds` を空にし、押した回数などの累計は維持します。投票集計用の `do-not-press-local-vote-stats`、匿名セッションID、プレイ履歴は別々のキーです。
+
+## 結果と多数派判定
+
+- 割合の分母は `press + dontPress` です。
+- 時間切れは割合・多数派判定へ含めません。
+- 有効回答が1票なら「最初の回答者です」。
+- 2〜4票なら「まだ回答が集まっていません」。
+- 5票以上で、自分と同じ回答が50%超なら多数派、50%未満なら少数派、50%なら真っ二つです。
+- 結果画面には問題文、自分の回答、両方の割合、判定、X共有、次の問題を表示します。
+
+## ローカル集計とSupabase集計
+
+### Supabase接続時
+
+- 回答を `votes` へ匿名セッション単位で保存します。
+- 同一セッション・同一問題の重複票はDB制約で防ぎます。
+- `get_vote_stats` と `get_total_vote_count` RPCから全ユーザー共通の実集計を取得します。
+- RLSにより、ブラウザは有効問題の参照、投票の追加、集計RPCの実行だけが可能です。
+
+### Supabase未接続時
+
+- ランダム票や仮票は使いません。
+- 実際の回答だけを `do-not-press-local-vote-stats` へ問題別に保存します。
+- 保存形式は `{ [questionId]: { press, dontPress, timeout } }` です。
+- ローカル票はその端末内だけの集計です。
+
+## X共有
+
+問題結果の共有文には、問題、代償、自分の回答、同じ回答の割合、多数派／少数派等の判定、問いかけ、`#絶対に押すな` を含めます。
+
+共有先は問題別ページです。
+
+```text
+https://8ega4.github.io/do-not-press/q/q030/?utm_source=x&utm_medium=social&utm_campaign=question_share&utm_content=q030
+```
+
+- URLは `URL` と `URLSearchParams` で生成します。
+- `utm_source=x`
+- `utm_medium=social`
+- `utm_campaign=question_share`
+- `utm_content=QUESTION_ID`
+- `?og=2` は共有URLに使いません。
+- `/q/[id]` は回答前に結果を見せず、回答後は通常のエンドレスプレイへ合流します。
 
 ## Supabase設定
 
 1. Supabaseでプロジェクトを作成します。
-2. SQL Editorを開きます。
-3. [`supabase/schema.sql`](./supabase/schema.sql) の内容をすべて実行します。
-4. Project Settings → APIからProject URLとanon keyを取得し、`.env.local`に設定します。
-5. 開発サーバーを再起動します。
+2. [`supabase/schema.sql`](./supabase/schema.sql) をSQL Editorで実行します。
+3. Project URLと公開用キーを環境変数へ設定します。
+4. 問題更新時はseed生成後、生成ブロックをSupabaseへ適用します。
 
-SQLは次を作成します。
+SQLは `questions` 108件、`votes`、RLS、重複防止制約、集計RPC、検索用インデックスを作成します。
 
-- `questions`: 問題データ30件
-- `votes`: 匿名セッションごとの回答
-- 同一セッション・同一問題への重複回答を防ぐユニーク制約
-- 公開問題の参照と匿名投票だけを許可するRLS
-- 投票テーブルを直接公開せずに集計する `get_vote_stats` / `get_total_vote_count` 関数
-- 問題別・日時別集計用インデックス
+## GitHub Pages
 
-## フォールバック動作
+`main` へのpushで [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml) が静的サイトを公開します。
 
-Supabase環境変数が両方そろっていない場合は、自動的にローカル集計モードになります。
+公開URL: https://8ega4.github.io/do-not-press/
 
-- 初期値は0票で、ランダム値や仮票は使用しない
-- 回答確定時だけ、問題別の実回答数を `do-not-press-local-vote-stats` へ保存
-- 保存形式は `{ [questionId]: { press, dontPress, timeout } }`
-- 「押した割合」「押さなかった割合」は時間切れを除いた `press + dontPress` を分母にする
-- 回答送信中は操作を無効化し、同じ回答操作による二重加算を防ぐ
-- Supabase接続時にエラーが起きた場合は、回答画面に再試行を表示
-
-ローカル集計は端末内だけの記録です。`localStorage` を削除すると0票へ戻ります。
-
-## 問題データの追加方法
-
-1. [`src/data/questions.ts`](./src/data/questions.ts) に一意なIDで問題を追加します。
-2. Supabase利用時は [`supabase/schema.sql`](./supabase/schema.sql) のseedにも同じ行を追加し、SQL Editorでその `insert ... on conflict` を実行します。
-3. `benefit`、`consequence`、`category`、`active` を設定します。
-
-```ts
-{
-  id: "q031",
-  benefit: "毎日必ず定時に帰れる",
-  consequence: "帰宅時の信号は全部赤になる",
-  category: "仕事",
-  active: true,
-}
-```
-
-## 共有とOGP
-
-- 問題共有URL: `/q/QUESTION_ID`
-- 問題結果と最終結果の「Xで共有」からXの投稿画面を新しいタブで開く
-- 投稿本文と共有URLは `URLSearchParams` でエンコード
-- 問題結果は現在の問題文と問題直リンク、最終結果は3問の結果とトップページURLを共有
-- X共有URLは `utm_source=x`、`utm_medium=social` と共有場所別の `utm_campaign` を付与
-- `public/og-image-v2.png` の1200×630画像を全ページのOGPに設定
-- favicon（16/32/48px・ICO）と180pxのApple Touch Iconは `scripts/generate_icons.py` から生成（Pillowが必要）
-- `robots.ts`、`sitemap.ts`、日本語lang、viewport、theme-colorを設定
-
-## GitHub Pagesへのデプロイ
-
-`.github/workflows/deploy-pages.yml` が `main` へのpushを検知し、静的サイトを自動公開します。
-
-1. GitHubのリポジトリ設定で Pages のSourceを `GitHub Actions` にします。
-2. `main`へpushするか、Actions画面から `Deploy to GitHub Pages` を手動実行します。
-3. 公開URLは `https://8ega4.github.io/do-not-press/` です。
-
-GitHub PagesではNext.jsのサーバー機能を使えないため、Supabase利用時はブラウザからanon keyで直接接続します。データ保護は `supabase/schema.sql` のRLS、権限、重複制約で行います。GitHubのRepository secretsに次を登録すると実集計が有効になります。
+GitHub Actions Secrets:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-未登録の場合もローカル集計モードで遊べます。
-
-ローカルでPages用の静的書き出しを確認する場合:
+ローカルでPages用の静的出力を確認する場合:
 
 ```bash
 GITHUB_PAGES=true \
@@ -136,31 +199,6 @@ NEXT_PUBLIC_SITE_URL=https://8ega4.github.io/do-not-press \
 npm run build
 ```
 
-生成物は `out/` に出力されます。
-
-## Vercelへのデプロイ
-
-1. リポジトリをGitHubへpushします。
-2. Vercelで `Add New Project` からリポジトリをImportします。
-3. Framework Presetが `Next.js` であることを確認します。
-4. Supabaseを使う場合は3つの環境変数をProduction / Previewに登録します。
-5. Deploy後、`NEXT_PUBLIC_SITE_URL`を公開URLへ変更して再デプロイします。
-
-Supabase未設定でもデプロイでき、その場合はローカル集計モードで動作します。
-
-## 今後追加できる機能
-
-- 本日の問題
-- 人気問題ランキング
-- ユーザー投稿問題
-- 都道府県別集計
-- 配信者モード / 視聴者投票
-- 管理画面
-- 問題の通報
-- 結果画像の保存
-- 多言語対応
-- PWA化
-
 ## デザイン資料
 
-実装前に作成したモバイル4状態のUIコンセプトは [`design/mobile-ui-concept.png`](./design/mobile-ui-concept.png) にあります。実際のUI文字・ボタン・グラフは画像ではなく、アクセシブルなHTML/CSSとして実装しています。
+既存のモバイルUIコンセプトは [`design/mobile-ui-concept.png`](./design/mobile-ui-concept.png) にあります。画面の文字・ボタン・グラフはすべてHTML/CSSで実装しています。

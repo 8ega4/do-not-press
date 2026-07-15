@@ -23,11 +23,10 @@ describe("share URLs", () => {
     expect(url.searchParams.has("og")).toBe(false);
   });
 
-  it("uses distinct campaigns for result and top-page sharing", async () => {
+  it("uses the top-page campaign for top sharing", async () => {
     vi.stubGlobal("window", { location: { origin: "https://example.com" } });
-    const { resultShareUrl, topShareUrl } = await import("@/lib/url");
+    const { topShareUrl } = await import("@/lib/url");
 
-    expect(new URL(resultShareUrl()).searchParams.get("utm_campaign")).toBe("result_share");
     expect(new URL(topShareUrl()).searchParams.get("utm_campaign")).toBe("top_share");
   });
 });

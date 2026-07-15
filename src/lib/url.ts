@@ -1,7 +1,7 @@
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export type XShareCampaign = "question_share" | "result_share" | "top_share";
+export type XShareCampaign = "question_share" | "top_share";
 
 type BuildXShareUrlOptions = {
   path: string;
@@ -25,10 +25,6 @@ export function buildXShareUrl({ path, campaign, content }: BuildXShareUrlOption
 
 export function questionShareUrl(questionId: string) {
   return buildXShareUrl({ path: `/q/${questionId}/`, campaign: "question_share", content: questionId });
-}
-
-export function resultShareUrl() {
-  return buildXShareUrl({ path: "/", campaign: "result_share" });
 }
 
 export function topShareUrl() {

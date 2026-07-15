@@ -4,16 +4,10 @@ export type Question = {
   consequence: string;
   category: string;
   active: boolean;
+  priority?: number;
 };
 
 export type VoteChoice = "press" | "dont_press" | "timeout";
-
-export type Vote = {
-  id: string;
-  questionId: string;
-  choice: VoteChoice;
-  createdAt: string;
-};
 
 export type VoteStats = {
   pressCount: number;
@@ -23,12 +17,20 @@ export type VoteStats = {
   source: "supabase" | "local";
 };
 
-export type GameAnswer = {
-  questionId: string;
-  choice: VoteChoice;
+export type PlayHistory = {
+  answeredQuestionIds: string[];
+  pressCount: number;
+  dontPressCount: number;
+  timeoutCount: number;
+  totalAnswered: number;
+  lastQuestionId?: string;
+  lastCategory?: string;
 };
 
-export type PlayerType = {
-  title: string;
-  description: string;
+export type VoteOutcomeStatus = "majority" | "minority" | "split" | "first" | "insufficient" | "timeout";
+
+export type VoteOutcome = {
+  status: VoteOutcomeStatus;
+  label: string;
+  sameAnswerPercent: number | null;
 };

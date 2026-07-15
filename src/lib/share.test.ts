@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildQuestionShareText, buildSummaryShareText, buildTopShareText, buildXIntentUrl, openXShare } from "@/lib/share";
+import { buildQuestionResultShareText, buildTopShareText, buildXIntentUrl, openXShare } from "@/lib/share";
 
 describe("X sharing", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -28,15 +28,27 @@ describe("X sharing", () => {
     );
   });
 
-  it("builds the requested question and summary post formats", () => {
-    expect(buildQuestionShareText("1億円もらえる", "一生Wi-Fiが1本になる")).toBe(
-      "「1億円もらえる」\nただし\n「一生Wi-Fiが1本になる」\nあなたは押す？押さない？\n#絶対に押すな",
-    );
-    expect(buildSummaryShareText(3, 2, "攻めの決断者")).toBe(
-      "『絶対に押すな』に挑戦！\n3問中2回、ボタンを押しました。\nタイプは「攻めの決断者」\nあなたなら押す？\n#絶対に押すな",
+  it("builds a question result post with answer, percentage, and majority label", () => {
+    expect(buildQuestionResultShareText({
+      benefit: "1億円もらえる",
+      consequence: "一生Wi-Fiが1本になる",
+      choice: "dont_press",
+      outcome: { status: "minority", label: "あなたは少数派です", sameAnswerPercent: 27 },
+    })).toBe(
+      "「1億円もらえる」\nただし\n「一生Wi-Fiが1本になる」\n\n私は「押さない」を選びました。\n同じ回答は27％。少数派でした。\n\nあなたなら押す？\n\n#絶対に押すな",
     );
     expect(buildTopShareText()).toBe(
       "『絶対に押すな』\nその代償、本当に払えますか？\nあなたなら押す？\n#絶対に押すな",
     );
+  });
+
+  it("uses a natural small-sample sentence", () => {
+    const text = buildQuestionResultShareText({
+      benefit: "一生信号に引っかからない",
+      consequence: "エレベーターは毎回すべての階に止まる",
+      choice: "press",
+      outcome: { status: "insufficient", label: "まだ回答が集まっていません", sameAnswerPercent: 75 },
+    });
+    expect(text).toContain("同じ回答は75％。まだ回答は集まっていません。");
   });
 });

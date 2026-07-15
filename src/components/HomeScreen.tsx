@@ -12,7 +12,7 @@ export function HomeScreen({ totalVotes, onStart }: { totalVotes: number; onStar
       <header className="experiment-label" aria-hidden="true">EXPERIMENT<br />NO.0001</header>
       <section className="home-copy">
         <h1>絶対に<br />押すな</h1>
-        <p>その代償、本当に払えますか？</p>
+        <p><span>押すか、押さないか。<br />決断は何度でも続く。</span></p>
       </section>
       <EmergencyButton label="赤いボタンでゲームを始める" size="hero" onClick={onStart} />
       <button type="button" className="action-button action-button--primary action-button--start" onClick={onStart}>ゲームを始める</button>

@@ -5,19 +5,19 @@ import { AnswerScreen } from "@/components/AnswerScreen";
 import { GameShell } from "@/components/GameShell";
 import { HomeScreen } from "@/components/HomeScreen";
 import { QuestionScreen } from "@/components/QuestionScreen";
-import { SummaryScreen } from "@/components/SummaryScreen";
 import { questions } from "@/data/questions";
-import { buildQuestionSequence, summarizeAnswers } from "@/lib/game";
+import { rolloverAnsweredQuestions, selectNextQuestion } from "@/lib/game";
+import { addAnswerToHistory, EMPTY_PLAY_HISTORY, readPlayHistory, savePlayHistory } from "@/lib/playHistory";
 import { getTotalVotes, submitVote } from "@/lib/votes";
-import type { GameAnswer, Question, VoteChoice, VoteStats } from "@/types/game";
+import type { PlayHistory, Question, VoteChoice, VoteStats } from "@/types/game";
 
-type View = "home" | "question" | "answer" | "summary";
+type View = "home" | "question" | "answer";
 
-export function GameApp({ initialQuestions = [], startImmediately = false }: { initialQuestions?: Question[]; startImmediately?: boolean }) {
+export function GameApp({ initialQuestion, startImmediately = false }: { initialQuestion?: Question; startImmediately?: boolean }) {
   const [view, setView] = useState<View>(startImmediately ? "question" : "home");
-  const [sequence, setSequence] = useState<Question[]>(initialQuestions);
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<GameAnswer[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | undefined>(initialQuestion);
+  const [history, setHistory] = useState<PlayHistory>(EMPTY_PLAY_HISTORY);
+  const [historyReady, setHistoryReady] = useState(false);
   const [lastChoice, setLastChoice] = useState<VoteChoice | null>(null);
   const [stats, setStats] = useState<VoteStats | null>(null);
   const [pending, setPending] = useState(false);
@@ -28,13 +28,26 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
   const submissionLock = useRef(false);
 
   useEffect(() => {
+    const historyTimer = window.setTimeout(() => {
+      setHistory(readPlayHistory());
+      setHistoryReady(true);
+    }, 0);
     getTotalVotes().then(setTotalVotes).catch(() => undefined);
+    return () => window.clearTimeout(historyTimer);
   }, []);
 
   const startGame = useCallback(() => {
-    setSequence(buildQuestionSequence(questions));
-    setIndex(0);
-    setAnswers([]);
+    const storedHistory = readPlayHistory();
+    const nextHistory = rolloverAnsweredQuestions(storedHistory, questions);
+    const question = selectNextQuestion({
+      questions,
+      answeredQuestionIds: nextHistory.answeredQuestionIds,
+      lastQuestionId: nextHistory.lastQuestionId,
+      lastCategory: nextHistory.lastCategory,
+    });
+    setHistory(nextHistory);
+    savePlayHistory(nextHistory);
+    setCurrentQuestion(question);
     setLastChoice(null);
     setStats(null);
     setError(null);
@@ -43,7 +56,7 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
   }, []);
 
   const answer = useCallback(async (choice: VoteChoice) => {
-    const question = sequence[index];
+    const question = currentQuestion;
     if (!question || submissionLock.current) return;
     submissionLock.current = true;
     setPending(true);
@@ -57,9 +70,12 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
 
     try {
       const nextStats = await submitVote(question.id, choice);
+      const currentHistory = historyReady ? history : readPlayHistory();
+      const nextHistory = addAnswerToHistory(currentHistory, question, choice);
+      setHistory(nextHistory);
+      savePlayHistory(nextHistory);
       setStats(nextStats);
       setLastChoice(choice);
-      setAnswers((current) => [...current, { questionId: question.id, choice }]);
       setTotalVotes((current) => current + 1);
       setView("answer");
       setFailedChoice(null);
@@ -69,14 +85,19 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
       submissionLock.current = false;
       setPending(false);
     }
-  }, [index, sequence]);
+  }, [currentQuestion, history, historyReady]);
 
   function next() {
-    if (index >= sequence.length - 1) {
-      setView("summary");
-      return;
-    }
-    setIndex((current) => current + 1);
+    const nextHistory = rolloverAnsweredQuestions(history, questions);
+    const question = selectNextQuestion({
+      questions,
+      answeredQuestionIds: nextHistory.answeredQuestionIds,
+      lastQuestionId: nextHistory.lastQuestionId,
+      lastCategory: nextHistory.lastCategory,
+    });
+    setHistory(nextHistory);
+    savePlayHistory(nextHistory);
+    setCurrentQuestion(question);
     setLastChoice(null);
     setStats(null);
     setError(null);
@@ -84,19 +105,15 @@ export function GameApp({ initialQuestions = [], startImmediately = false }: { i
     setView("question");
   }
 
-  const currentQuestion = sequence[index];
-  const summary = summarizeAnswers(answers);
-
   return (
     <GameShell isImpact={impact}>
       {view === "home" && <HomeScreen totalVotes={totalVotes} onStart={startGame} />}
       {view === "question" && currentQuestion && (
-        <QuestionScreen question={currentQuestion} index={index} answeredCount={answers.length} pending={pending} error={error} onAnswer={answer} onRetry={() => failedChoice && answer(failedChoice)} />
+        <QuestionScreen question={currentQuestion} history={history} pending={pending || !historyReady} error={error} onAnswer={answer} onRetry={() => failedChoice && answer(failedChoice)} />
       )}
       {view === "answer" && currentQuestion && lastChoice && stats && (
-        <AnswerScreen question={currentQuestion} choice={lastChoice} stats={stats} isLast={index === sequence.length - 1} onNext={next} />
+        <AnswerScreen question={currentQuestion} choice={lastChoice} stats={stats} history={history} onNext={next} />
       )}
-      {view === "summary" && <SummaryScreen answers={answers} {...summary} onRestart={startGame} />}
     </GameShell>
   );
 }
