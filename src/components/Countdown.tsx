@@ -30,11 +30,21 @@ export function Countdown({ seconds = QUESTION_TIME_LIMIT_SECONDS, onComplete }:
     return () => window.clearInterval(timer);
   }, [seconds]);
 
+  const announcement = [5, 3, 1, 0].includes(remaining)
+    ? remaining === 0 ? "時間切れです" : `残り${remaining}秒`
+    : "";
+
   return (
-    <div className="countdown" role="timer" aria-live="polite" aria-label={`残り${remaining}秒`}>
+    <div
+      className="countdown"
+      role="timer"
+      aria-label={`残り${remaining}秒`}
+      data-urgent={remaining <= 3}
+    >
       <span>あと</span>
       <strong>{remaining}</strong>
       <span>秒</span>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</span>
     </div>
   );
 }

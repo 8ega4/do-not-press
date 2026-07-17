@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildQuestionResultShareText, buildTopShareText, buildXIntentUrl, openXShare } from "@/lib/share";
+import {
+  buildLineShareUrl,
+  buildQuestionResultShareText,
+  buildThreadsIntentUrl,
+  buildTopShareText,
+  buildXIntentUrl,
+  openXShare,
+  withShareSource,
+} from "@/lib/share";
 
 describe("X sharing", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -26,6 +34,35 @@ describe("X sharing", () => {
       "_blank",
       "noopener,noreferrer",
     );
+  });
+
+  it("builds encoded Threads and LINE share URLs", () => {
+    const data = {
+      text: "日本語の結果\n#絶対に押すな",
+      url: "https://example.com/q/q001/?utm_source=threads",
+    };
+    const threads = new URL(buildThreadsIntentUrl(data));
+    const line = new URL(buildLineShareUrl(data));
+
+    expect(threads.origin + threads.pathname).toBe("https://www.threads.net/intent/post");
+    expect(threads.searchParams.get("text")).toBe(`${data.text}\n${data.url}`);
+    expect(line.origin + line.pathname).toBe("https://social-plugins.line.me/lineit/share");
+    expect(line.searchParams.get("text")).toBe(data.text);
+    expect(line.searchParams.get("url")).toBe(data.url);
+  });
+
+  it("changes only the UTM source for each share destination", () => {
+    const shared = new URL(withShareSource(
+      "https://example.com/q/q001/?utm_source=x&utm_medium=social&utm_campaign=question_share&utm_content=q001",
+      "line",
+    ));
+
+    expect(Object.fromEntries(shared.searchParams)).toEqual({
+      utm_source: "line",
+      utm_medium: "social",
+      utm_campaign: "question_share",
+      utm_content: "q001",
+    });
   });
 
   it("builds a question result post with answer, percentage, and majority label", () => {

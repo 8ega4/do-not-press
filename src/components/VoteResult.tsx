@@ -50,8 +50,13 @@ export function VoteResult({ stats, choice }: { stats: VoteStats; choice: VoteCh
         <strong>{dontPressPercent}<small>%</small></strong>
       </div>
       <p className={`vote-outcome vote-outcome--${outcome.status}`}>{outcome.label}</p>
-      <p className="vote-result__total">有効回答 {validVotes.toLocaleString("ja-JP")}票</p>
-      <p className="vote-result__source">{stats.source === "local" ? "ローカル集計モード" : "リアルタイム集計"}</p>
+      <div className="vote-result__meta">
+        <p className="vote-result__total">有効回答 {validVotes.toLocaleString("ja-JP")}票</p>
+        <p className={`vote-result__source vote-result__source--${stats.source}`}>
+          <span aria-hidden="true" />
+          {stats.source === "local" ? "ローカル集計" : "リアルタイム集計"}
+        </p>
+      </div>
     </section>
   );
 }

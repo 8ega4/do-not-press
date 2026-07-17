@@ -12,6 +12,7 @@ import { getTotalVotes, submitVote } from "@/lib/votes";
 import type { PlayHistory, Question, VoteChoice, VoteStats } from "@/types/game";
 
 type View = "home" | "question" | "answer";
+type TotalVotesState = number | null | "error";
 
 export function GameApp({ initialQuestion, startImmediately = false }: { initialQuestion?: Question; startImmediately?: boolean }) {
   const [view, setView] = useState<View>(startImmediately ? "question" : "home");
@@ -24,17 +25,28 @@ export function GameApp({ initialQuestion, startImmediately = false }: { initial
   const [error, setError] = useState<string | null>(null);
   const [failedChoice, setFailedChoice] = useState<VoteChoice | null>(null);
   const [impact, setImpact] = useState(false);
-  const [totalVotes, setTotalVotes] = useState(0);
+  const [totalVotes, setTotalVotes] = useState<TotalVotesState>(null);
   const submissionLock = useRef(false);
+  const previousView = useRef<View>(view);
 
   useEffect(() => {
     const historyTimer = window.setTimeout(() => {
       setHistory(readPlayHistory());
       setHistoryReady(true);
     }, 0);
-    getTotalVotes().then(setTotalVotes).catch(() => undefined);
+    getTotalVotes().then(setTotalVotes).catch(() => setTotalVotes("error"));
     return () => window.clearTimeout(historyTimer);
   }, []);
+
+  useEffect(() => {
+    if (previousView.current === view) return;
+    previousView.current = view;
+    const focusFrame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      document.querySelector<HTMLElement>("[data-screen-title]")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [view]);
 
   const startGame = useCallback(() => {
     const storedHistory = readPlayHistory();
@@ -76,7 +88,7 @@ export function GameApp({ initialQuestion, startImmediately = false }: { initial
       savePlayHistory(nextHistory);
       setStats(nextStats);
       setLastChoice(choice);
-      setTotalVotes((current) => current + 1);
+      setTotalVotes((current) => (typeof current === "number" ? current : 0) + 1);
       setView("answer");
       setFailedChoice(null);
     } catch (caught) {

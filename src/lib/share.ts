@@ -5,6 +5,8 @@ export type XShareData = {
   url: string;
 };
 
+export type ShareSource = "x" | "threads" | "line" | "native" | "copy";
+
 const ANSWER_SHARE_LABEL: Record<VoteChoice, string> = {
   press: "押す",
   dont_press: "押さない",
@@ -47,6 +49,58 @@ export function buildXIntentUrl({ text, url }: XShareData) {
   return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
+export function withShareSource(url: string, source: ShareSource) {
+  const sharedUrl = new URL(url);
+  sharedUrl.searchParams.set("utm_source", source);
+  return sharedUrl.toString();
+}
+
+export function buildThreadsIntentUrl({ text, url }: XShareData) {
+  const params = new URLSearchParams({ text: `${text}\n${url}` });
+  return `https://www.threads.net/intent/post?${params.toString()}`;
+}
+
+export function buildLineShareUrl({ text, url }: XShareData) {
+  const params = new URLSearchParams({ url, text });
+  return `https://social-plugins.line.me/lineit/share?${params.toString()}`;
+}
+
+function openShareWindow(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function openXShare(data: XShareData) {
-  window.open(buildXIntentUrl(data), "_blank", "noopener,noreferrer");
+  openShareWindow(buildXIntentUrl(data));
+}
+
+export function openThreadsShare(data: XShareData) {
+  openShareWindow(buildThreadsIntentUrl(data));
+}
+
+export function openLineShare(data: XShareData) {
+  openShareWindow(buildLineShareUrl(data));
+}
+
+export async function shareWithDevice({ text, url }: XShareData) {
+  if (!window.navigator.share) return false;
+  await window.navigator.share({ text, url });
+  return true;
+}
+
+export async function copyShareLink(url: string) {
+  if (window.navigator.clipboard?.writeText) {
+    await window.navigator.clipboard.writeText(url);
+    return;
+  }
+
+  const input = document.createElement("textarea");
+  input.value = url;
+  input.setAttribute("readonly", "");
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.appendChild(input);
+  input.select();
+  const copied = document.execCommand("copy");
+  input.remove();
+  if (!copied) throw new Error("リンクをコピーできませんでした。");
 }
