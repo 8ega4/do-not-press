@@ -152,6 +152,19 @@ node scripts/generate_supabase_seed.mjs
 - 保存形式は `{ [questionId]: { press, dontPress, timeout } }` です。
 - ローカル票はその端末内だけの集計です。
 
+### 計測リセット履歴
+
+- 2026-07-18 17:22 JST: 本番Supabaseの `public.votes` 22件を0件へリセットし、元データを `private.votes_backup_20260718_1648` へ退避しました。
+- 2026-07-19 13:09 JST: 再計測開始前に `public.votes` を `restart identity` 付きで再度リセットし、実テーブル・総回答数RPC・問題別RPCがすべて0件であることを確認しました。
+- 問題データ `public.questions`、Supabase未接続時のローカル票、各端末のプレイ履歴はリセット対象外です。
+- リセット前の匿名化済み一覧は [`reports/supabase-question-answer-list-2026-07-18.md`](./reports/supabase-question-answer-list-2026-07-18.md) に保存しています。
+
+実行したSQL:
+
+```sql
+truncate table public.votes restart identity;
+```
+
 ## X共有
 
 問題結果の共有文には、問題、代償、自分の回答、同じ回答の割合、多数派／少数派等の判定、問いかけ、`#絶対に押すな` を含めます。
