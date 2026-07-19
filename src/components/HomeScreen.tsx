@@ -1,5 +1,5 @@
 import { EmergencyButton } from "@/components/EmergencyButton";
-import { ShareButton } from "@/components/ShareButton";
+import { ShareActions } from "@/components/ShareButton";
 import { buildTopShareText } from "@/lib/share";
 import { topShareUrl } from "@/lib/url";
 
@@ -32,7 +32,7 @@ export function HomeScreen({ totalVotes, onStart }: { totalVotes: TotalVotesStat
         <span>これまで</span><strong>{formattedTotalVotes}</strong><span>回の決断</span>
       </div>
       <div className="home-share">
-        <ShareButton text={shareText} url={shareUrl} />
+        <ShareActions text={shareText} url={shareUrl} />
       </div>
       <p className="fiction-note"><span aria-hidden="true">△</span> これは架空の二択ゲームです</p>
     </div>

@@ -56,21 +56,6 @@ function LinkIcon() {
   );
 }
 
-export function ShareButton({ text, url }: XShareData) {
-  return (
-    <button
-      type="button"
-      className="action-button action-button--x-share"
-      aria-label="Xで共有"
-      title="Xで共有"
-      onClick={() => openXShare({ text, url })}
-    >
-      <XIcon />
-      <span>で共有</span>
-    </button>
-  );
-}
-
 export function ShareActions({ text, url }: XShareData) {
   const [feedback, setFeedback] = useState("");
   const xUrl = withShareSource(url, "x");
@@ -104,7 +89,7 @@ export function ShareActions({ text, url }: XShareData) {
   }
 
   return (
-    <section className="share-actions" aria-label="結果を共有">
+    <section className="share-actions" aria-label="SNSで共有">
       <button
         type="button"
         className="action-button action-button--x-share"
